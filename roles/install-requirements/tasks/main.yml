@@ -42,6 +42,11 @@
   pip:
     requirements: /root/ansible-container/requirements.txt
 
+- name: Install pytest
+  pip:
+    name: pytest
+    state: present
+
 - name: Upgrade setup tools
   command: 'pip install --upgrade setuptools'
 
