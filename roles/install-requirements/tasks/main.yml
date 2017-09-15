@@ -1,0 +1,70 @@
+# install-requirements/main.yml 
+--- 
+
+- name: Update all packages
+  yum:
+    name: '*'
+    state: latest
+  
+- name: Install prereqs
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - yum-utils
+  - device-mapper-persistent-data
+  - lvm2
+  - epel-release
+  - python-devel
+
+- name: Install development tools
+  yum: 
+    name: '@Development tools'
+    state: present
+
+- name: Install pip
+  yum:
+    name: python-pip
+    state: present
+
+- name: Install Ansible
+  pip:
+    name: ansible
+    version: "{{ ansible_version }}"
+
+- name: Clone ansible-container
+  git:
+    repo: 'https://github.com/ansible/ansible-container.git'
+    dest: /root/ansible-container
+    version: "{{ ansible_container_tag }}"
+
+- name: Install ansible-container requirements 
+  pip:
+    requirements: /root/ansible-container/requirements.txt
+
+- name: Upgrade setup tools
+  command: 'pip install --upgrade setuptools'
+
+- name: Install AC 
+  command: 'pip install -e .[docker]'
+  args:
+    chdir: /root/ansible-container
+
+- name: Add Docker repo
+  command: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+- name: Update the package index
+  command: yum makecache fast
+
+- name: Install docker
+  yum:
+    name: docker-ce
+    state: present
+  
+- name: Start docker
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+

@@ -1,0 +1,5 @@
+# install-requirements/main.yml
+---
+ansible_version: 2.3.0
+ansible_container_tag: release-0.9.2
+

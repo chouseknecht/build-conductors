@@ -1,0 +1,50 @@
+# provision_staging.yml
+---
+- name: Create ec2 instance
+  hosts: localhost 
+  gather_facts: no
+  connection: local
+  tasks:
+  - name: Create staging instance 
+    ec2:
+      key_name: chouse
+      instance_type: t2.medium
+      # image: ami-a8d369c0
+      image: ami-46c1b650
+      wait: yes
+      wait_timeout: 360
+      group: galaxy-qa
+      instance_tags:
+        galaxy-qa: yes
+      count_tag:
+        galaxy-qa: yes
+      exact_count: 2
+      vpc_subnet_id: subnet-d01b8aec
+      assign_public_ip: yes  
+      region: us-east-1
+    register: ec2
+  
+  - name: Add new instance to host group
+    add_host:
+      hostname: "{{ item.public_ip }}"
+      groupname: myhosts 
+      ansible_user: centos
+    with_items: "{{ ec2.instances }}"
+    when: ec2 is defined
+
+  - name: Wait for SSH to come up
+    wait_for:
+      host: "{{ item.public_dns_name }}"
+      port: 22
+      delay: 60
+      timeout: 320
+      state: started
+    with_items: "{{ ec2.instances }}"
+    when: ec2 is defined
+
+ - name: Configure new instance
+   hosts: myhosts 
+   become: yes
+   roles:
+   - role: install-requirements 
+     ansible_container_tag: release-0.9.2

@@ -1,0 +1,20 @@
+- name: Build conductors
+  hosts: builder
+  gather_facts: no
+  become: yes
+  tasks: 
+  - include: includes/build-conductor.yml
+    with_items: 
+    - 'centos:7'
+    - 'fedora:26'
+    - 'fedora:25'
+    - 'fedora:24'
+    - 'debian:jessie'
+    - 'debian:stretch'
+    - 'debian:wheezy'
+    - 'ubuntu:precise'
+    - 'ubuntu:trusty'
+    - 'ubuntu:xenial'
+    - 'ubuntu:zesty'
+    - 'alpine:3.5'
+    - 'alpine:3.4' 
