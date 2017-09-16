@@ -30,8 +30,8 @@
 - name: Install Ansible
   pip:
     name: ansible
-    version: "{{ ansible_version }}"
-
+    state: present
+    
 - name: Clone ansible-container
   git:
     repo: 'https://github.com/ansible/ansible-container.git'
