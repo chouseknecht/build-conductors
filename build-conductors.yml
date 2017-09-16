@@ -1,10 +1,14 @@
 - name: Build conductors
-  hosts: builder
+  hosts: localhost
   gather_facts: no
-  become: yes
-  tasks: 
-  - include: includes/build-conductor.yml
-    with_items: 
+  connection: local
+  tasks:
+
+  - name: Build the conductor distro image
+    command: "python ./setup.py prebake --distros {{ item }} --debug"
+    args:
+      chdir: /root/ansible-container
+    with_items:
     - 'centos:7'
     - 'fedora:26'
     - 'fedora:25'
@@ -17,4 +21,18 @@
     - 'ubuntu:xenial'
     - 'ubuntu:zesty'
     - 'alpine:3.5'
-    - 'alpine:3.4' 
+    - 'alpine:3.4'
+
+  - name: Run tests
+    command: python ./setup.py test --ansible-args="-vvv"
+    args:
+      chdir: /root/ansible-container
+    register: output
+    ignore_errors: yes
+
+  - debug:
+      var: output.stdout_lines
+
+  - assert:
+      that:
+      - output.rc == 0
