@@ -1,0 +1,15 @@
+- name: Format /dev/xvdf
+  command: mkfs -t ext4 /dev/xvdf
+
+- name: Create /docker
+  file:
+    path: /docker
+    state: directory 
+
+- name: Mount storage
+  mount:
+    path: /docker
+    src: /dev/xvdf 
+    fstype: ext4
+    state: mounted
+

@@ -1,11 +1,39 @@
 # install-requirements/main.yml 
 --- 
+- name: Disable SELinux
+  selinux:
+    state: disabled
+
+- include: mount-storage.yml
+
+- name: Register
+  command: "subscription-manager register --username {{ satellite_username }}  --password {{ satellite_password }} --auto-attach --force"
+
+- name: Enable rhui configs 
+  command: "yum-config-manager --enable {{ item }}"
+  with_items:
+  - rhui-REGION-client-config-server-7
+  - rhui-REGION-rhel-server-extras
+  - rhui-REGION-rhel-server-optional
+  - rhui-REGION-rhel-server-releases
+  - rhui-REGION-rhel-server-rh-common
+  - rhui-REGION-rhel-server-supplementary
+
+- name: Get epel
+  get_url:
+    url: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
+    dest: /tmp/epel-release-latest-7.noarch.rpm
+
+- name: Install epel
+  yum: 
+    name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    state: present
 
 - name: Update all packages
   yum:
     name: '*'
     state: latest
-  
+
 - name: Install prereqs
   yum:
     name: "{{ item }}"
@@ -14,12 +42,15 @@
   - yum-utils
   - device-mapper-persistent-data
   - lvm2
-  - epel-release
   - python-devel
+  - docker
+  - atomic
+  - git
+  - unzip
 
 - name: Install development tools
   yum: 
-    name: '@Development tools'
+    name: '@Development Tools'
     state: present
 
 - name: Install pip
@@ -31,7 +62,7 @@
   pip:
     name: ansible
     state: present
-    
+
 - name: Clone ansible-container
   git:
     repo: 'https://github.com/ansible/ansible-container.git'
@@ -50,26 +81,75 @@
 - name: Upgrade setup tools
   command: 'pip install --upgrade setuptools'
 
+- name: Remove docker-py
+  pip:
+    name: docker-py
+    state: absent
+
+- name: Remove docker
+  pip:
+    name: docker
+    state: absent
+
 - name: Install AC 
   command: 'pip install -e .[docker]'
   args:
     chdir: /root/ansible-container
 
-- name: Add Docker repo
-  command: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+- name: Copy daemon.json 
+  copy:
+    src: '{{ role_path }}/files/daemon.json'
+    dest: /etc/docker/daemon.json
 
-- name: Update the package index
-  command: yum makecache fast
+- name: Create .docker
+  file:
+    path: /home/root/.docker
+    state: directory
 
-- name: Install docker
-  yum:
-    name: docker-ce
-    state: present
-  
+- name: Remove config.json
+  file:
+    path: /home/root/.docker/config.json
+    state: absent
+
+- name: Touch config.json
+  file:
+    path: /home/root/.docker/config.json
+    state: touch
+
 - name: Start docker
   service:
     name: docker
     state: started
     enabled: yes
 
+- name: Copy scanner
+  copy:
+    src: scanner.zip 
+    dest: /root/scanner.zip 
+
+- name: Remove RHC4TP_scanning_plugin
+  file:
+    path: /root/RHC4TP_scanning_plugin
+    state: absent
+
+- name: Unzip scanner 
+  command: unzip scanner.zip
+  args:
+    chdir: /root
+
+- name: Rename directory
+  shell: "mv RHC4TP_scanning_plugin* RHC4TP_scanning_plugin"
+  args:
+    chdir: /root
+
+- name: Build
+  command: docker build -t plugin .
+  args:
+    chdir: /root/RHC4TP_scanning_plugin
+
+- name: Tag
+  command: docker tag plugin registry.rhc4tp.openshift.com/connect-tools/plugin
+
+- name: Install plugin  
+  command: atomic install plugin
 

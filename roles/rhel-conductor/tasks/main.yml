@@ -1,0 +1,40 @@
+# tasks/main.yml 
+---
+- name: Build the rhel7 conductor
+  command: python ./setup.py prebake --distros {{ rhel_image }}
+  args:
+    chdir: /root/ansible-container
+  register: output 
+  ignore_errors: yes
+
+- debug: var=output.stdout_lines
+
+- assert:
+    that:
+    - output.rc == 0 
+
+- name: Run tests 
+  command: python ./setup.py test --ansible-args="-vvv" 
+  args:
+    chdir: /root/ansible-container
+  env:
+    BASE_DISTRO: '{{ rhel_image }}' 
+  register: output
+  ignore_errors: yes
+
+- debug: var=output.stdout_lines
+
+- assert:
+    that:
+    - output.rc == 0 
+
+- name: Run the scan
+  command: "atomic --debug scan --scanner plugin container-conductor-{{ rhel_image | regex_replace(':', '-') }}:{{ ansible_container_release }}"
+  register: output
+  ignore_errors: yes
+
+- debug: var=output.stdout_lines
+
+- assert:
+    that:
+    - output.rc == 0

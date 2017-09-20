@@ -1,0 +1,8 @@
+- name: Configure new instance
+  hosts: myhosts
+  vars_files:
+  - vars.yml
+  become: yes
+  roles:
+  - role: install-requirements
+    ansible_container_tag: release-0.9.2
