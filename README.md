@@ -1,5 +1,13 @@
 # build-conductors
 
-Playbooks and such to provision an AWS instance and build AC conductor images
+Provisions a RHEL7 VM with Docker, Ansible Container and scanning bits:
 
+```
+$ ansible-playbook provision.yml --ask-vault-pass
+```
+
+On the VM do the following:
+
+- Clone this repo
+- Run: `ansible-playbook build-conductor.yml`
 
