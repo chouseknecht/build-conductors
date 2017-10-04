@@ -112,9 +112,9 @@
     state: absent
 
 - name: Touch config.json
-  file:
-    path: /home/root/.docker/config.json
-    state: touch
+  copy:
+    src: {{ role_path }}/files/config.json
+    dest: /home/root/.docker/config.json
 
 - name: Start docker
   service:
