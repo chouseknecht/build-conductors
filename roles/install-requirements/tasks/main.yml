@@ -103,18 +103,18 @@
 
 - name: Create .docker
   file:
-    path: /home/root/.docker
+    path: /root/.docker
     state: directory
 
 - name: Remove config.json
   file:
-    path: /home/root/.docker/config.json
+    path: /root/.docker/config.json
     state: absent
 
 - name: Touch config.json
   copy:
-    src: {{ role_path }}/files/config.json
-    dest: /home/root/.docker/config.json
+    src: '{{ role_path }}/files/config.json'
+    dest: /root/.docker/config.json
 
 - name: Start docker
   service:
